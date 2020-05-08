@@ -1,0 +1,19 @@
+{
+  "name": "section11",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "mongoose": "^5.9.12"
+  },
+  "devDependencies": {
+    "@typegoose/typegoose": "^7.0.0",
+    "@types/mongoose": "^5.7.15"
+  }
+}
