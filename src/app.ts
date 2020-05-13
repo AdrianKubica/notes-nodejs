@@ -1,8 +1,8 @@
 import express from 'express'
 import './db/mongoose'
-import { router as allRouter } from './routers/all'
-import { router as taskRouter } from './routers/task'
-import { router as userRouter } from './routers/user'
+import allRouter from './routers/all'
+import taskRouter from './routers/task'
+import userRouter from './routers/user'
 
 const app = express()
 const port = process.env.PORT || 3000
