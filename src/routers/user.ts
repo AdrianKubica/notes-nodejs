@@ -1,14 +1,14 @@
 import express from 'express'
-import { UserModel, User } from '../models/user'
-import bcrypt from 'bcryptjs'
+import { UserModel } from '../models/user'
+import { auth } from '../middleware/auth'
 
 const router = express.Router()
 
 router.post('/users', async (req, res) => {
     const user = new UserModel(req.body)
     try {
-        await user.save()
-        res.status(201).send(user)
+        const token = await user.generateAuthToken()
+        res.status(201).send({user, token})
     } catch (error) {
         res.status(400).send(error)
     }
@@ -17,36 +17,39 @@ router.post('/users', async (req, res) => {
 router.post('/users/login', async (req, res) => {
     try {
         const user = await UserModel.findByCredentials(req.body.email, req.body.password)
-        res.send(user)
+        const token = await user.generateAuthToken()
+        res.send({user, token})
     } catch (error) {
         res.status(400).send({error: error.message})
     }
 })
 
-router.get('/users', async (req, res) => {
+router.post('/users/logout', auth, async (req, res) => {
     try {
-        const users = await UserModel.find()
-        return res.send(users)
+        req.user.tokens = req.user.tokens.filter((token: any) => token.token !== req.token)
+        await req.user.save()
+
+        res.send()
     } catch(error) {
-        console.log(error)
-        res.status(500).send(error)
+        res.status(500).send()
     }
 })
 
-router.get('/users/:id', async (req, res) => {
-    const _id = req.params.id
+router.post('/users/logoutall', auth, async (req, res) => {
     try {
-        const user = await UserModel.findById(_id)
-        if(!user) {
-            return res.status(404).send()
-        }
-        res.send(user)
+        req.user.tokens = []
+        await req.user.save()
+        res.status(200).send('Logout from all sessions')
     } catch (error) {
-        res.status(500).send(error)
+        res.status(500).send(error.message)
     }
 })
 
-router.patch('/users/:id', async (req, res) => {
+router.get('/users/me', auth, async (req, res) => {
+    res.send(req.user)
+})
+
+router.patch('/users/me', auth, async (req, res) => {
     const updates = Object.keys(req.body)
     const allowedUpdates = ['name', 'email', 'password', 'age']
     const isValidOperation = updates.every(el => allowedUpdates.includes(el))
@@ -58,27 +61,18 @@ router.patch('/users/:id', async (req, res) => {
     }
 
     try {
-        const user = await UserModel.findById(req.params.id)
+        updates.forEach((update) => req.user.set(update, req.body[update]))
+        await req.user.save()
 
-        if (!user) {
-            return res.sendStatus(404)
-        }
-
-        updates.forEach((update) => user.set(update, req.body[update]))
-        await user.save()
-
-        res.send(user)
+        res.send(req.user)
     } catch(error) {
         res.status(400).send(error)
     }
 })
 
-router.delete('/users/:id', async (req, res) => {
+router.delete('/users/me', auth, async (req, res) => {
     try {
-        const user = await UserModel.findByIdAndDelete(req.params.id)
-        if (!user) {
-            return res.sendStatus(404)
-        }
+        await req.user.remove()
         res.sendStatus(204)
     } catch (error) {
         res.status(500).send(error)

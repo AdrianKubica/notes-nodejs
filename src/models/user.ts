@@ -1,8 +1,15 @@
 import mongoose from 'mongoose'
-import { prop, buildSchema, addModelToTypegoose, pre, ReturnModelType } from '@typegoose/typegoose'
+import { prop, buildSchema, addModelToTypegoose, pre, ReturnModelType, getModelForClass, getDiscriminatorModelForClass, arrayProp, DocumentType } from '@typegoose/typegoose'
 import validator from 'validator'
 import bcrypt from 'bcryptjs'
-import { query } from 'express'
+import jwt from 'jsonwebtoken'
+
+class Token {
+    @prop({
+        required: true
+    })
+    token!: string
+}
 
 @pre<User>('save', async function(next) {
     const user = this
@@ -64,6 +71,11 @@ export class User {
     })
     password!: string
 
+    @arrayProp({
+        items: Token
+    })
+    tokens!: Token[]
+
     public static async findByCredentials(this: ReturnModelType<typeof User>, email: string, password: string) {
         const user = await this.findOne({ email })
         if (!user) {
@@ -77,6 +89,24 @@ export class User {
         }
 
         return user
+    }
+
+    public async generateAuthToken(this: DocumentType<User>) {
+        const user = this
+        const token = jwt.sign({ _id: user._id.toString() }, 'thisismynewcourse')
+        user.tokens = user.tokens.concat({ token })
+        await user.save()
+        return token
+    }
+
+    public toJSON(this: DocumentType<User>) {
+        const user = this
+        const userObject = user.toObject()
+
+        delete userObject.password
+        delete userObject.tokens
+
+        return userObject
     }
 }
 
