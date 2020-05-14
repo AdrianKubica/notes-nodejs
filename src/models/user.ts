@@ -1,7 +1,16 @@
 import mongoose from 'mongoose'
-import { prop, buildSchema, addModelToTypegoose } from '@typegoose/typegoose'
+import { prop, buildSchema, addModelToTypegoose, pre, ReturnModelType } from '@typegoose/typegoose'
 import validator from 'validator'
+import bcrypt from 'bcryptjs'
+import { query } from 'express'
 
+@pre<User>('save', async function(next) {
+    const user = this
+    if (user.isModified('password')) {
+        user.password = await bcrypt.hash(user.password, 8)
+    }
+    next()
+})
 export class User {
     @prop({
         required: true,
@@ -23,6 +32,7 @@ export class User {
 
     @prop({
         required: true,
+        unique: true,
         trim: true,
         lowercase: true,
         validate: {
@@ -53,6 +63,21 @@ export class User {
         ]
     })
     password!: string
+
+    public static async findByCredentials(this: ReturnModelType<typeof User>, email: string, password: string) {
+        const user = await this.findOne({ email })
+        if (!user) {
+            throw new Error('Unable to login')
+        }
+    
+        const isMatch = await bcrypt.compare(password, user.password)
+    
+        if (!isMatch) {
+            throw new Error('Unable to login')
+        }
+
+        return user
+    }
 }
 
 const userSchema = buildSchema(User)
