@@ -3,7 +3,6 @@ import './db/mongoose'
 import allRouter from './routers/all'
 import taskRouter from './routers/task'
 import userRouter from './routers/user'
-import jwt from 'jsonwebtoken'
 
 const app = express()
 const port = process.env.PORT || 3000

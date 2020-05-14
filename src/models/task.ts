@@ -1,5 +1,6 @@
 import mongoose from 'mongoose'
-import { prop, buildSchema, addModelToTypegoose } from '@typegoose/typegoose'
+import { prop, buildSchema, addModelToTypegoose, Ref } from '@typegoose/typegoose'
+import { User } from './user'
 
 export class Task {
     @prop({
@@ -12,6 +13,12 @@ export class Task {
         default: false
     })
     completed!: boolean
+
+    @prop({
+        required: true,
+        ref: 'User'
+    })
+    public owner!: Ref<User>
 }
 
 const taskSchema = buildSchema(Task)

@@ -1,8 +1,9 @@
 import mongoose from 'mongoose'
-import { prop, buildSchema, addModelToTypegoose, pre, ReturnModelType, getModelForClass, getDiscriminatorModelForClass, arrayProp, DocumentType } from '@typegoose/typegoose'
+import { prop, buildSchema, addModelToTypegoose, pre, ReturnModelType, arrayProp, DocumentType, Ref, post } from '@typegoose/typegoose'
 import validator from 'validator'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
+import { Task, TaskModel } from './task'
 
 class Token {
     @prop({
@@ -16,6 +17,13 @@ class Token {
     if (user.isModified('password')) {
         user.password = await bcrypt.hash(user.password, 8)
     }
+
+    next()
+})
+@pre<User>('remove', async function(next) {
+    const user = this
+    await TaskModel.deleteMany({ owner: user._id })
+    
     next()
 })
 export class User {
@@ -108,6 +116,13 @@ export class User {
 
         return userObject
     }
+    
+    @arrayProp({
+        ref: 'Task',
+        foreignField: 'owner',
+        localField: '_id'
+    })
+    public tasks!: Ref<Task>[]
 }
 
 const userSchema = buildSchema(User)
