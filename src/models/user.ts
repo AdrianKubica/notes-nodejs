@@ -1,5 +1,5 @@
 import mongoose from 'mongoose'
-import { prop, buildSchema, addModelToTypegoose, pre, ReturnModelType, arrayProp, DocumentType, Ref, post } from '@typegoose/typegoose'
+import { prop, buildSchema, addModelToTypegoose, pre, ReturnModelType, arrayProp, DocumentType, Ref } from '@typegoose/typegoose'
 import validator from 'validator'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
@@ -83,6 +83,8 @@ export class User {
         items: Token
     })
     tokens!: Token[]
+
+    avatar!: Buffer
 
     public static async findByCredentials(this: ReturnModelType<typeof User>, email: string, password: string) {
         const user = await this.findOne({ email })
