@@ -84,6 +84,7 @@ export class User {
     })
     tokens!: Token[]
 
+    @prop()
     avatar!: Buffer
 
     public static async findByCredentials(this: ReturnModelType<typeof User>, email: string, password: string) {
@@ -115,6 +116,7 @@ export class User {
 
         delete userObject.password
         delete userObject.tokens
+        delete userObject.avatar
 
         return userObject
     }

@@ -2,6 +2,7 @@ import express, { response, Request, Response } from 'express'
 import { UserModel } from '../models/user'
 import { auth } from '../middleware/auth'
 import multer from 'multer'
+import sharp from 'sharp'
 
 const router = express.Router()
 
@@ -81,7 +82,6 @@ router.delete('/users/me', auth, async (req, res) => {
 })
 
 const upload = multer({
-    dest: 'avatars',
     limits: {
         fileSize: 1000000
     },
@@ -93,14 +93,41 @@ const upload = multer({
     }
 })
 
-router.post('/users/me/avatar', auth, upload.single('avatar'), (req: Request, res: Response) => {
-    console.log(req.file)
+router.post('/users/me/avatar', auth, upload.single('avatar'), async (req: Request, res: Response) => {
     if (!req.file) {
         return res.status(400).send({error: 'Please provide an avatar'})
     }
+
+    const buffer = await sharp(req.file.buffer).resize(250, 250).png().toBuffer()
+    req.user.avatar = buffer
+    await req.user.save()
     res.send()
 }, (error: Error, req: Request, res: Response, next: Function) => {
     res.status(400).send({error: error.message})
+})
+
+router.delete('/users/me/avatar', auth, async (req: Request, res: Response) => {
+    req.user.avatar = undefined
+    try {
+        await req.user.save()
+        res.send('Avatar deleted successfully')
+    } catch (error) {
+        res.status(500).send({error: 'Unable to delete avatar'})
+    }
+})
+
+router.get('/users/:id/avatar', async (req, res) => {
+    try {
+        const user = await UserModel.findById(req.params.id)
+        if (!user || !user.avatar) {
+            throw new Error()
+        }
+
+        res.setHeader('Content-Type', 'image/png')
+        res.send(user.avatar)
+    } catch (error) {
+        res.status(404).send()
+    }
 })
 
 export default router
