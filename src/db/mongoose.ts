@@ -1,8 +1,8 @@
 import mongoose from 'mongoose'
 
-const connecttionURL = 'mongodb://192.168.99.110/task-manager-api'
+const connectionURL = process.env.MOGODB_CONNECTION_URL!
 
-mongoose.connect(connecttionURL, { 
+mongoose.connect(connectionURL, { 
     useNewUrlParser: true, 
     useUnifiedTopology: true,
     useCreateIndex: true,
