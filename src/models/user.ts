@@ -23,7 +23,7 @@ class Token {
 @pre<User>('remove', async function(next) {
     const user = this
     await TaskModel.deleteMany({ owner: user._id })
-    
+
     next()
 })
 export class User {
@@ -125,5 +125,7 @@ export class User {
     public tasks!: Ref<Task>[]
 }
 
-const userSchema = buildSchema(User)
+const userSchema = buildSchema(User, {
+    timestamps: true
+})
 export const UserModel = addModelToTypegoose(mongoose.model('User', userSchema), User)

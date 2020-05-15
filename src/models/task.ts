@@ -21,5 +21,7 @@ export class Task {
     public owner!: Ref<User>
 }
 
-const taskSchema = buildSchema(Task)
+const taskSchema = buildSchema(Task, {
+    timestamps: true
+})
 export const TaskModel = addModelToTypegoose(mongoose.model('Task', taskSchema), Task)
