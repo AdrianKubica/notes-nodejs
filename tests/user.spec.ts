@@ -1,30 +1,9 @@
 import request from 'supertest'
-import jwt from 'jsonwebtoken'
-import mongoose from 'mongoose'
 import app from '../src/app'
 import { UserModel } from '../src/models/user'
+import { userOneId, userOne, fakeUserOne, setupDatabase } from './fixtures/db'
 
-const userOneId = mongoose.Types.ObjectId()
-const userOne = {
-    _id: userOneId,
-    name: 'Mike',
-    email: 'mike@example.com',
-    password: 'whatareyoutalkingabout',
-    tokens: [{
-        token: jwt.sign({ _id: userOneId }, process.env.JSON_WEB_TOKEN_SECRET!)
-    }]
-}
-
-const fakeUserOne = {
-    name: 'Tom',
-    email: 'tom@example.com',
-    password: 'fakeusertom'
-}
-
-beforeEach(async () => {
-    await UserModel.deleteMany({})
-    await new UserModel(userOne).save()
-})
+beforeEach(setupDatabase)
 
 test('Should signup a new user', async () => {
     const response: any = await request(app).post('/users').send({
@@ -45,10 +24,10 @@ test('Should signup a new user', async () => {
             name: 'Andrew',
             email: 'andrew@example.com'
         },
-        token: user?.tokens[0].token
+        token: user!.tokens[0].token
     })
 
-    expect(user?.password).not.toBe('somesuperpass')
+    expect(user!.password).not.toBe('somesuperpass')
 })
 
 test('Should login existing user', async () => {
@@ -58,7 +37,7 @@ test('Should login existing user', async () => {
     }).expect(200)
 
     const user = await UserModel.findById({ _id: response.body.user._id })
-    expect(response.body.token).toBe(user?.tokens[1].token)
+    expect(response.body.token).toBe(user!.tokens[1].token)
 })
 
 describe('POST /users/login', () => {
@@ -121,5 +100,45 @@ describe('DELETE /users/:id', () => {
         } else if (status == 401) {
             expect(user).not.toBeNull()
         }
+    })
+})
+
+describe('POST /users/me/avatar', () => {
+    it('Should upload avatar image', async() => {
+        await request(app)
+            .post('/users/me/avatar')
+            .set('Authorization', `Bearer ${userOne.tokens[0].token}`)
+            .attach('avatar', 'tests/fixtures/profile-pic.jpg')
+            .expect(200)
+
+        const user = await UserModel.findById(userOneId)
+        expect(user!.avatar).toEqual(expect.any(Buffer))
+    })
+})
+
+describe('PATCH /users/me', () => {
+    it('Should properly update user', async () => {
+        await request(app)
+            .patch('/users/me')
+            .set('Authorization', `Bearer ${userOne.tokens[0].token}`)
+            .send({
+                name: 'Adam'
+            })
+            .expect(200)
+
+        const user = await UserModel.findById(userOneId)
+        expect(user!.name).toBe('Adam')
+    })
+
+    it('Should not update invalid user fileds', async () => {
+        await request(app)
+            .patch('/users/me')
+            .set('Authorization', `Bearer ${userOne.tokens[0].token}`)
+            .send({
+                field: "this should not be updated"
+            })
+            .expect(400, {
+                error: 'Invalid updates, only allowed: name, email, password, age'
+            })
     })
 })

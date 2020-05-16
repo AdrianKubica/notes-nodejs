@@ -8,7 +8,7 @@
     "dev": "nodemon --watch src --ignore src/**/*.spec.ts --exec ts-node src/server.ts",
     "start-dev": "env-cmd -f ./config/dev.env ts-node-dev --respawn --transpileOnly ./src/server.ts",
     "build": "tsc",
-    "test": "env-cmd -f ./config/test.env jest --watch --runInBand"
+    "test": "env-cmd -f ./config/test.env jest --watch --runInBand --verbose"
   },
   "keywords": [],
   "author": "",
